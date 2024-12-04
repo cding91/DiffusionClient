@@ -2,12 +2,12 @@ using DiffusionClient.Queue;
 
 namespace DiffusionClient.Common;
 
-public interface IEnqueueable
+public interface IEnqueueable<TInput>
 {
     /// <summary>
     /// Input for the request
     /// </summary>
-    public Input? Input { get; }
+    public TInput? Input { get; }
 
     /// <summary>
     /// HTTP method for the request

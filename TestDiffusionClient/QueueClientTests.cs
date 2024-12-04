@@ -1,9 +1,9 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using DiffusionClient;
+using DiffusionClient.Common;
 using DiffusionClient.Queue;
-using DiffusionClient.Response;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Moq.Protected;
 using Xunit;
@@ -11,17 +11,34 @@ using Assert = Xunit.Assert;
 
 namespace TestDiffusionClient;
 
-public class QueueClientTests
+public class QueueClientTests : IClassFixture<QueueClientTestFixture>
 {
+    private readonly QueueClient _queueClient;
+    
+    private readonly Mock<HttpMessageHandler> _handlerMock;
+
+    /// <summary>
+    /// Constructor to set up DI
+    /// </summary>
+    /// <param name="fixture"><see cref="QueueClientTestFixture"/></param>
+    public QueueClientTests(QueueClientTestFixture fixture)
+    {
+        _queueClient = fixture.ServiceProvider.GetRequiredService<QueueClient>();
+        _handlerMock = fixture.HttpMessageHandlerMock;
+    }
+    
     [Fact]
     public async Task Status_ShouldReturnQueueStatus()
     {
-        var expectedResponse = new QueueResponse("requestId", QueueStatus.Completed);
-        var expectedJsonResponse = new StringContent(JsonSerializer.Serialize(expectedResponse), Encoding.UTF8, "application/json");
+        var expectedResponse = new QueueResponse
+        {
+            RequestId = "requestId",
+            Status = QueueStatus.Completed,
+        };
+        var expectedJsonResponse =
+            new StringContent(JsonSerializer.Serialize(expectedResponse), Encoding.UTF8, "application/json");
         
-        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-
-        handlerMock
+        _handlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -37,28 +54,33 @@ public class QueueClientTests
                     Content = expectedJsonResponse,
                 };
             });
-        
-        var httpClient = new HttpClient(handlerMock.Object)
-        {
-            BaseAddress = new Uri("https://queue.fal.run/"),
-        };
-        
-        var queueService = new QueueClient(httpClient);
-        
-        var status = await queueService.Status("endpointId", "requestId");
-        
-        Assert.Equal(QueueStatus.Completed, status);
+
+        var actualResponse = await _queueClient.Status("endpointId", "requestId");
+
+        Assert.Equal(actualResponse, expectedResponse);
     }
 
     [Fact]
     public async Task Poll_ShouldCallOnUpdateAndOnComplete()
     {
-        var timeToComplete = 2000;
+        var onCompleteCalled = false;
+
+        var options = new QueueSubscribeOptions
+        {
+            RequestId = "requestId",
+            OnQueueUpdate = (status) =>
+            {
+                if (status == QueueStatus.Completed)
+                {
+                    onCompleteCalled = true;
+                }
+            },
+            PollingInterval = 1000,
+        };
+
+        var timeToComplete = 10000;
         var waitTime = 0.0;
-        var pollInterval = 1000;
-        
-        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-        handlerMock
+        _handlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -67,7 +89,7 @@ public class QueueClientTests
             )
             .ReturnsAsync(() =>
             {
-                waitTime += pollInterval;
+                waitTime += options.PollingInterval;
                 return (waitTime < timeToComplete)
                     ? new HttpResponseMessage
                     {
@@ -84,18 +106,15 @@ public class QueueClientTests
                             Encoding.UTF8, "application/json"),
                     };
             });
-
-        var httpClient = new HttpClient(handlerMock.Object)
-        {
-            BaseAddress = new Uri("https://queue.fal.run/"),
-        };
-        var queueService = new QueueClient(httpClient);
         
-        var onCompleteCalled = false;
+        await _queueClient.SubscribeToStatus("endpointId", options);
 
-        await queueService.Poll("endpointId", "requestId", null, () => onCompleteCalled = true, pollInterval,
-            new CancellationToken());
-        
         Assert.True(onCompleteCalled);
+    }
+
+    [Fact]
+    public async Task Result_ShouldReturnResult()
+    {
+
     }
 }

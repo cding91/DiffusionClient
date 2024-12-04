@@ -1,5 +1,4 @@
 using DiffusionClient.Common;
-using DiffusionClient.Response;
 
 namespace DiffusionClient.Queue;
 
@@ -8,7 +7,11 @@ public class QueueSubscribeOptions : ISubscribable, IPollable, IQueueable
     /// <summary>
     /// The ID of the request
     /// </summary>
-    public string? RequestId { get; init; }
+    /// <remarks>
+    /// This is the ID of the request that is returned when the request is submitted.
+    /// Initialized to an empty string but will be set when the request is submitted.
+    /// </remarks>
+    public string RequestId { get; set; } = string.Empty;
     
     /// <summary>
     /// Callback function called when a request is enqueued

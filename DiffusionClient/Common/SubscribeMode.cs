@@ -1,4 +1,4 @@
-namespace DiffusionClient.Queue;
+namespace DiffusionClient.Common;
 
 /// <summary>
 /// Mode of subscription

@@ -1,4 +1,4 @@
-namespace DiffusionClient;
+namespace DiffusionClient.Common;
 
 /// <summary>
 /// Output for the request
@@ -6,7 +6,7 @@ namespace DiffusionClient;
 /// <remarks>
 /// Each model should have a corresponding output type.
 /// </remarks>
-public class Output: object
+public class Output: Dictionary<string, object>
 {
     
 }

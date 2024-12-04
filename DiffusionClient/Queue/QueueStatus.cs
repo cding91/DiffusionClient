@@ -1,4 +1,4 @@
-namespace DiffusionClient.Response;
+namespace DiffusionClient.Queue;
 
 /// <summary>
 /// Queue status

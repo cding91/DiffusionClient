@@ -1,4 +1,4 @@
-namespace DiffusionClient;
+namespace DiffusionClient.Common;
 
 /// <summary>
 /// Input for the request

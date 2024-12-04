@@ -18,6 +18,8 @@ public class Worker : BackgroundService
     {
         var client = new Client(_httpClient);
         
+        var submitOptions = new 
+        
         var option = new QueueSubscribeOptions(input: new Dictionary<string, object>
         {
             { "prompt", "A cat" }

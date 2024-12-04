@@ -1,43 +1,41 @@
-﻿using System.Text;
-using System.Text.Json;
-using DiffusionClient.Common;
+﻿using DiffusionClient.Common;
 using DiffusionClient.Queue;
-using DiffusionClient.Response;
 
 namespace DiffusionClient;
 
+/// <summary>
+/// Client for interacting with the diffusion model API
+/// </summary>
 public class Client
 {
-    private readonly HttpClient _httpClient;
     private readonly QueueClient _queueClient;
 
     /// <summary>
     /// Constructor
     /// </summary>
     /// <param name="httpClient">DI of HTTP client</param>
-    public Client(HttpClient httpClient) {
-        _httpClient = httpClient;
+    public Client(HttpClient httpClient)
+    {
         _queueClient = new QueueClient(httpClient);
     }
 
-    public async Task<T> Subscribe<T>(string endpointId, QueueSubmitOptions submitOptions, QueueSubscribeOptions subscribeOptions)
+    /// <summary>
+    /// Submit a request to the queue and subscribe to the status until it is completed
+    /// </summary>
+    /// <param name="endpointId">Endpoint ID</param>
+    /// <param name="options">Client subscribe options represented as <see cref="ClientOptions{TInput}"/></param>
+    /// <returns>Result of the request</returns>
+    public async Task<Result<TOutput>> Subscribe<TInput, TOutput>(string endpointId, ClientOptions<TInput> options)
     {
-        var queueResponse = await _queueClient.Submit(endpointId, submitOptions);
-        
-        if (queueResponse == null)
-        {
-            return default;
-        }
-        
-        if (subscribeOptions.OnQueue != null)
-        {
-            subscribeOptions.OnQueue(queueResponse.RequestId);
-        }
-        
-        Console.WriteLine(queueResponse.RequestId);
+        var enqueueResponse = await _queueClient.Submit(endpointId, options.ToQueueSubmitOptions());
 
-        return default;
+        options.RequestId = enqueueResponse.RequestId; // Set the request ID to the response ID
+        options.OnQueue?.Invoke(enqueueResponse.RequestId);
+
+        var completeResponse = await _queueClient.SubscribeToStatus(endpointId, options.ToQueueSubscribeOptions());
+
+        var result = await _queueClient.Result<TOutput>(endpointId, completeResponse.RequestId);
+
+        return result;
     }
-    
 }
-

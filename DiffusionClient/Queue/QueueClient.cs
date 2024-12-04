@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using DiffusionClient.Common;
-using DiffusionClient.Response;
 
 namespace DiffusionClient.Queue;
 
@@ -28,11 +27,11 @@ public class QueueClient
     /// Submit a request to the queue
     /// </summary>
     /// <param name="endpointId">Endpoint ID</param>
-    /// <param name="options"><see cref="QueueSubmitOptions"/></param>
+    /// <param name="options"><see cref="QueueSubmitOptions{TInput}"/></param>
     /// <returns><see cref="QueueResponse"/> returned by the request</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the HTTP method type is invalid.</exception>
     /// <exception cref="JsonException">Thrown when the response cannot be deserialized.</exception>
-    public async Task<QueueResponse> Submit(string endpointId, QueueSubmitOptions options)
+    public async Task<QueueResponse> Submit<TInput>(string endpointId, QueueSubmitOptions<TInput> options)
     {
         // Serialize the content
         var content = new StringContent(JsonSerializer.Serialize(options.Input), Encoding.UTF8, "application/json");
@@ -77,7 +76,7 @@ public class QueueClient
     /// </remarks>
     public async Task<QueueResponse> Status(string endpointId, string requestId)
     {
-        using var message = await _httpClient.GetAsync($"{endpointId}/requests/{requestId}/status");
+        using var message = await _httpClient.GetAsync($"/{endpointId}/requests/{requestId}/status");
         message.EnsureSuccessStatusCode();
 
         var json = await message.Content.ReadAsStringAsync();
@@ -95,28 +94,28 @@ public class QueueClient
     /// Subscribe to the status of the request
     /// </summary>
     /// <param name="endpointId">Endpoint ID</param>
-    /// <param name="optionses">Options for status subscription</param>
+    /// <param name="options">Options for status subscription</param>
     /// <returns><see cref="QueueResponse"/> with status set as completed</returns>
     /// <exception cref="NotImplementedException">Thrown when streaming mode or logs are requested.</exception>
     /// <exception cref="OperationCanceledException">Thrown when the request is cancelled due to timeout or external signal.</exception>
-    public async Task<QueueResponse> SubscribeToStatus(string endpointId, QueueSubscribeOptions optionses)
+    public async Task<QueueResponse> SubscribeToStatus(string endpointId, QueueSubscribeOptions options)
     {
-        if (optionses.Mode == SubscribeMode.Streaming)
+        if (options.Mode == SubscribeMode.Streaming)
         {
             throw new NotImplementedException("Streaming mode is not implemented yet");
         }
 
-        if (optionses.Logs)
+        if (options.Logs)
         {
             throw new NotImplementedException("Logs is not implemented yet");
         }
 
         // Terminate the polling if (1) the external token is cancelled or (2) the timeout is reached
         using var source = CancellationTokenSource.CreateLinkedTokenSource(
-            optionses.AbortSignal ?? CancellationToken.None,
-            new CancellationTokenSource(optionses.Timeout ?? Timeout.Infinite).Token);
+            options.AbortSignal ?? CancellationToken.None,
+            new CancellationTokenSource(options.Timeout ?? Timeout.Infinite).Token);
 
-        return await Poll(endpointId, optionses.RequestId, optionses.OnQueueUpdate, optionses.PollingInterval,
+        return await Poll(endpointId, options.RequestId, options.OnQueueUpdate, options.PollingInterval,
             source.Token);
     }
 
@@ -127,13 +126,13 @@ public class QueueClient
     /// <param name="requestId">ID of the request</param>
     /// <returns>Result of the request</returns>
     /// <exception cref="JsonException">Thrown when the response cannot be deserialized.</exception>
-    public async Task<Result<Output>> Result(string endpointId, string requestId)
+    public async Task<Result<TOutput>> Result<TOutput>(string endpointId, string requestId)
     {
         using var message = await _httpClient.GetAsync($"{endpointId}/requests/{requestId}/result");
         message.EnsureSuccessStatusCode();
         
         var json = await message.Content.ReadAsStringAsync();
-        var response = JsonSerializer.Deserialize<Result<Output>>(json);
+        var response = JsonSerializer.Deserialize<Result<TOutput>>(json);
         
         if (response == null)
         {

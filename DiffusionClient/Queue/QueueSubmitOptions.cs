@@ -5,12 +5,12 @@ namespace DiffusionClient.Queue;
 /// <summary>
 /// Submit options
 /// </summary>
-public class QueueSubmitOptions: IEnqueueable
+public class QueueSubmitOptions<TInput>: IEnqueueable<TInput>
 {
     /// <summary>
     /// Input for the request
     /// </summary>
-    public Input? Input { get; init; }
+    public TInput? Input { get; init; }
 
     /// <summary>
     /// HTTP method for the request

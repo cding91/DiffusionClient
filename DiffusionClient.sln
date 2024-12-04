@@ -2,8 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiffusionClient", "DiffusionClient\DiffusionClient.csproj", "{6390A89B-8C0D-4F8F-B1BC-4D8F3DFA9911}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiffusionModelService", "DiffusionModelService\DiffusionModelService.csproj", "{C6216F83-941E-4D96-8C59-A6A003C1B89E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestDiffusionClient", "TestDiffusionClient\TestDiffusionClient.csproj", "{ECC65F0B-373B-444E-B794-10DE94E759AB}"
 EndProject
 Global
@@ -16,10 +14,6 @@ Global
 		{6390A89B-8C0D-4F8F-B1BC-4D8F3DFA9911}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6390A89B-8C0D-4F8F-B1BC-4D8F3DFA9911}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6390A89B-8C0D-4F8F-B1BC-4D8F3DFA9911}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C6216F83-941E-4D96-8C59-A6A003C1B89E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C6216F83-941E-4D96-8C59-A6A003C1B89E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C6216F83-941E-4D96-8C59-A6A003C1B89E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C6216F83-941E-4D96-8C59-A6A003C1B89E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{ECC65F0B-373B-444E-B794-10DE94E759AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{ECC65F0B-373B-444E-B794-10DE94E759AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ECC65F0B-373B-444E-B794-10DE94E759AB}.Release|Any CPU.ActiveCfg = Release|Any CPU

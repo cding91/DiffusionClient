@@ -1,4 +1,4 @@
-using DiffusionClient.Response;
+using DiffusionClient.Queue;
 
 namespace DiffusionClient.Common;
 

@@ -1,4 +1,6 @@
-namespace DiffusionClient.Response;
+using System.Diagnostics.CodeAnalysis;
+
+namespace DiffusionClient.Queue;
 
 /// <summary>
 /// Response for the queue
@@ -31,7 +33,20 @@ public record QueueResponse
     /// </remarks>
     public int? QueuePosition { get; init; }
     
-    // TODO: RequestLog[]
+    /// <summary>
+    /// Parameterless constructor
+    /// </summary>
+    public QueueResponse() {}
     
-    // TODO: Metrics
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="requestId">ID of the request</param>
+    /// <param name="status">Status of the request represented by <see cref="QueueStatus"/></param>
+    [SetsRequiredMembers]
+    public QueueResponse(string requestId, QueueStatus status)
+    {
+        RequestId = requestId;
+        Status = status;
+    }
 }
