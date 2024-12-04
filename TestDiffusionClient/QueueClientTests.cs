@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using DiffusionClient.Common;
 using DiffusionClient.Queue;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Moq.Protected;
@@ -57,7 +58,7 @@ public class QueueClientTests : IClassFixture<QueueClientTestFixture>
 
         var actualResponse = await _queueClient.Status("endpointId", "requestId");
 
-        Assert.Equal(actualResponse, expectedResponse);
+        actualResponse.Should().BeEquivalentTo(expectedResponse);
     }
 
     [Fact]
@@ -109,12 +110,37 @@ public class QueueClientTests : IClassFixture<QueueClientTestFixture>
         
         await _queueClient.SubscribeToStatus("endpointId", options);
 
-        Assert.True(onCompleteCalled);
+        onCompleteCalled.Should().BeTrue();
     }
 
     [Fact]
     public async Task Result_ShouldReturnResult()
     {
+        var expectedResult = new Result<Dictionary<string, string>>
+        {
+            RequestId = "requestId",
+            Data = new Dictionary<string, string>()
+            {
+                {"url", "https://example.com/requestId/result"},
+            }
+        };
+        var expectedJsonResponse =
+            new StringContent(JsonSerializer.Serialize(expectedResult), Encoding.UTF8, "application/json");
+        
+        _handlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Get),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = expectedJsonResponse,
+            });
+        
+        var actualResult = await _queueClient.Result<Dictionary<string, string>>("endpointId", "requestId");
 
+        actualResult.Should().BeEquivalentTo(expectedResult);
     }
 }
