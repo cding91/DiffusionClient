@@ -16,7 +16,7 @@ public class QueueSubscribeOptions : ISubscribable, IPollable, IQueueable
     /// <summary>
     /// Callback function called when a request is enqueued
     /// </summary>
-    public Action<string>? OnQueue { get; init; }
+    public Action<string>? OnEnqueue { get; init; }
     
     /// <summary>
     /// Callback function called when a request queue status is updated

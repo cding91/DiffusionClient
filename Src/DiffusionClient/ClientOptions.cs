@@ -46,7 +46,7 @@ public class ClientOptions<TInput> : IEnqueueable<TInput>, ISubscribable, IPolla
     /// <summary>
     /// Callback function called when a request is enqueued
     /// </summary>
-    public Action<string>? OnQueue { get; init; }
+    public Action<string>? OnEnqueue { get; init; }
 
     /// <summary>
     /// Callback function called when a request queue status is updated
@@ -99,7 +99,7 @@ public class ClientOptions<TInput> : IEnqueueable<TInput>, ISubscribable, IPolla
         return new QueueSubscribeOptions
         {
             RequestId = RequestId,
-            OnQueue = OnQueue,
+            OnEnqueue = OnEnqueue,
             OnQueueUpdate = OnQueueUpdate,
             Mode = Mode,
             AbortSignal = AbortSignal,

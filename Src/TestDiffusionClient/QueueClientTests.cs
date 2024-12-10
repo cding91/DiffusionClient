@@ -34,7 +34,7 @@ public class QueueClientTests : IClassFixture<QueueClientTestFixture>
         var expectedResponse = new QueueResponse
         {
             RequestId = "requestId",
-            Status = QueueStatus.Completed,
+            Status = QueueStatus.COMPLETED,
         };
         var expectedJsonResponse =
             new StringContent(JsonSerializer.Serialize(expectedResponse), Encoding.UTF8, "application/json");
@@ -71,7 +71,7 @@ public class QueueClientTests : IClassFixture<QueueClientTestFixture>
             RequestId = "requestId",
             OnQueueUpdate = (status) =>
             {
-                if (status == QueueStatus.Completed)
+                if (status == QueueStatus.COMPLETED)
                 {
                     onCompleteCalled = true;
                 }
@@ -96,14 +96,14 @@ public class QueueClientTests : IClassFixture<QueueClientTestFixture>
                     {
                         StatusCode = HttpStatusCode.OK,
                         Content = new StringContent(
-                            JsonSerializer.Serialize(new QueueResponse("requestId", QueueStatus.InQueue)),
+                            JsonSerializer.Serialize(new QueueResponse("requestId", QueueStatus.IN_QUEUE)),
                             Encoding.UTF8, "application/json"),
                     }
                     : new HttpResponseMessage
                     {
                         StatusCode = HttpStatusCode.OK,
                         Content = new StringContent(
-                            JsonSerializer.Serialize(new QueueResponse("requestId", QueueStatus.Completed)),
+                            JsonSerializer.Serialize(new QueueResponse("requestId", QueueStatus.COMPLETED)),
                             Encoding.UTF8, "application/json"),
                     };
             });

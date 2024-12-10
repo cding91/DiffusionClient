@@ -12,7 +12,7 @@ public interface IQueueable
     /// <summary>
     /// Callback function called when a request is enqueued
     /// </summary>
-    public Action<string>? OnQueue { get; }
+    public Action<string>? OnEnqueue { get; }
     
     /// <summary>
     /// Callback function called when a request queue status is updated

@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+
 namespace DiffusionClient.Queue;
 
 /// <summary>
@@ -5,7 +7,9 @@ namespace DiffusionClient.Queue;
 /// </summary>
 public enum QueueStatus
 {
-    InProgress,
-    Completed,
-    InQueue
+    IN_QUEUE,
+    
+    IN_PROGRESS,
+    
+    COMPLETED,
 }

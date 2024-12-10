@@ -30,7 +30,7 @@ public class Client
         var enqueueResponse = await _queueClient.Submit(endpointId, options.ToQueueSubmitOptions());
 
         options.RequestId = enqueueResponse.RequestId; // Set the request ID to the response ID
-        options.OnQueue?.Invoke(enqueueResponse.RequestId);
+        options.OnEnqueue?.Invoke(enqueueResponse.RequestId);
 
         var completeResponse = await _queueClient.SubscribeToStatus(endpointId, options.ToQueueSubscribeOptions());
 

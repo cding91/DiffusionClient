@@ -1,6 +1,8 @@
 using System.Text;
-using System.Text.Json;
 using DiffusionClient.Common;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using JsonException = System.Text.Json.JsonException;
 
 namespace DiffusionClient.Queue;
 
@@ -13,6 +15,22 @@ public class QueueClient
     /// HTTP client for making requests
     /// </summary>
     private readonly HttpClient _httpClient;
+    
+    /// <summary>
+    /// JSON serializer settings
+    /// </summary>
+    private JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
+    {
+        NullValueHandling = NullValueHandling.Ignore,
+        ContractResolver = new DefaultContractResolver
+        {
+            NamingStrategy = new SnakeCaseNamingStrategy
+            {
+                OverrideSpecifiedNames = false,
+                ProcessDictionaryKeys = true,
+            }
+        },
+    };
 
     /// <summary>
     /// Constructor
@@ -30,30 +48,35 @@ public class QueueClient
     /// <param name="options"><see cref="QueueSubmitOptions{TInput}"/></param>
     /// <returns><see cref="QueueResponse"/> returned by the request</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the HTTP method type is invalid.</exception>
-    /// <exception cref="JsonException">Thrown when the response cannot be deserialized.</exception>
+    /// <exception cref="System.Text.Json.JsonException">Thrown when the response cannot be deserialized.</exception>
     public async Task<QueueResponse> Submit<TInput>(string endpointId, QueueSubmitOptions<TInput> options)
     {
         // Serialize the content
-        var content = new StringContent(JsonSerializer.Serialize(options.Input), Encoding.UTF8, "application/json");
+        var jsonRequest = JsonConvert.SerializeObject(options.Input, _jsonSerializerSettings);
+        var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+        // var content = new StringContent(JsonSerializer.Serialize(options.Input), Encoding.UTF8, "application/json");
 
+        // TODO: Verify if the official API has this. Does not seems to be needed.
         // Send the request
-        using HttpResponseMessage response = options.Method switch
-        {
-            HttpMethodType.Post => await _httpClient.PostAsync($"{endpointId}/requests", content,
-                options.AbortSignal ?? CancellationToken.None),
-            HttpMethodType.Get => await _httpClient.GetAsync($"{endpointId}/requests",
-                options.AbortSignal ?? CancellationToken.None),
-            HttpMethodType.Put => await _httpClient.PutAsync($"{endpointId}/requests", content,
-                options.AbortSignal ?? CancellationToken.None),
-            HttpMethodType.Delete => await _httpClient.DeleteAsync($"{endpointId}/requests",
-                options.AbortSignal ?? CancellationToken.None),
-            _ => throw new ArgumentOutOfRangeException(nameof(options), options.Method, "Invalid HTTP method type")
-        };
+        // using HttpResponseMessage response = options.Method switch
+        // {
+        //     HttpMethodType.Post => await _httpClient.PostAsync($"{endpointId}/", content,
+        //         options.AbortSignal ?? CancellationToken.None),
+        //     HttpMethodType.Get => await _httpClient.GetAsync($"{endpointId}/",
+        //         options.AbortSignal ?? CancellationToken.None),
+        //     HttpMethodType.Put => await _httpClient.PutAsync($"{endpointId}/", content,
+        //         options.AbortSignal ?? CancellationToken.None),
+        //     HttpMethodType.Delete => await _httpClient.DeleteAsync($"{endpointId}/",
+        //         options.AbortSignal ?? CancellationToken.None),
+        //     _ => throw new ArgumentOutOfRangeException(nameof(options), options.Method, "Invalid HTTP method type")
+        // };
+        using HttpResponseMessage response = await _httpClient.PostAsync($"{endpointId}/", content);
         response.EnsureSuccessStatusCode();
 
         // Deserialize the response
-        var json = await response.Content.ReadAsStringAsync();
-        var queueResponse = JsonSerializer.Deserialize<QueueResponse>(json);
+        var jsonResponse = await response.Content.ReadAsStringAsync();
+        var queueResponse = JsonConvert.DeserializeObject<QueueResponse>(jsonResponse, _jsonSerializerSettings);        
+        // var queueResponse = JsonSerializer.Deserialize<QueueResponse>(json);
 
         if (queueResponse == null)
         {
@@ -80,7 +103,8 @@ public class QueueClient
         message.EnsureSuccessStatusCode();
 
         var json = await message.Content.ReadAsStringAsync();
-        var response = JsonSerializer.Deserialize<QueueResponse>(json);
+        var response = JsonConvert.DeserializeObject<QueueResponse>(json, _jsonSerializerSettings);
+        // var response = JsonSerializer.Deserialize<QueueResponse>(json);
 
         if (response == null)
         {
@@ -128,18 +152,25 @@ public class QueueClient
     /// <exception cref="JsonException">Thrown when the response cannot be deserialized.</exception>
     public async Task<Result<TOutput>> Result<TOutput>(string endpointId, string requestId)
     {
-        using var message = await _httpClient.GetAsync($"{endpointId}/requests/{requestId}/result");
+        using var message = await _httpClient.GetAsync($"{endpointId}/requests/{requestId}/");
         message.EnsureSuccessStatusCode();
         
         var json = await message.Content.ReadAsStringAsync();
-        var response = JsonSerializer.Deserialize<Result<TOutput>>(json);
+        var output = JsonConvert.DeserializeObject<TOutput>(json, _jsonSerializerSettings);
+        // var response = JsonSerializer.Deserialize<Result<TOutput>>(json);
         
-        if (response == null)
+        if (output == null)
         {
             throw new JsonException("Failed to deserialize the response");
         }
         
-        return response;
+        var result = new Result<TOutput>
+        {
+            RequestId = requestId,
+            Data = output
+        };
+        
+        return result;
     }
 
     /// <summary>
@@ -161,7 +192,7 @@ public class QueueClient
 
             onUpdate?.Invoke(statusResponse.Status);
 
-            if (statusResponse.Status == QueueStatus.Completed)
+            if (statusResponse.Status == QueueStatus.COMPLETED)
             {
                 return statusResponse;
             }

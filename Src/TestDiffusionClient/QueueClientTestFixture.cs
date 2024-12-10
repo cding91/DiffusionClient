@@ -42,8 +42,6 @@ public class QueueClientTestFixture : IDisposable
                 client.BaseAddress = new Uri("https://queue.fal.run/");
             })
             .ConfigurePrimaryHttpMessageHandler(() => HttpMessageHandlerMock.Object);
-        
-        // serviceCollection.AddTransient<QueueClient>();
 
         ServiceProvider = serviceCollection.BuildServiceProvider();
     }
