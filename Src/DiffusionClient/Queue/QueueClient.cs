@@ -99,7 +99,7 @@ public class QueueClient
     /// </remarks>
     public async Task<QueueResponse> Status(string endpointId, string requestId)
     {
-        using var message = await _httpClient.GetAsync($"/{endpointId}/requests/{requestId}/status");
+        using var message = await _httpClient.GetAsync($"/{endpointId}/requests/{requestId}/status/");
         message.EnsureSuccessStatusCode();
 
         var json = await message.Content.ReadAsStringAsync();
