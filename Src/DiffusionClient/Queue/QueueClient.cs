@@ -2,7 +2,6 @@ using System.Text;
 using DiffusionClient.Common;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using JsonException = System.Text.Json.JsonException;
 
 namespace DiffusionClient.Queue;
 

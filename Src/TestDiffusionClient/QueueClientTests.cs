@@ -1,22 +1,35 @@
 using System.Net;
 using System.Text;
-using System.Text.Json;
 using DiffusionClient.Common;
 using DiffusionClient.Queue;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Moq.Protected;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Xunit;
-using Assert = Xunit.Assert;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace TestDiffusionClient;
 
 public class QueueClientTests : IClassFixture<QueueClientTestFixture>
 {
     private readonly QueueClient _queueClient;
-    
     private readonly Mock<HttpMessageHandler> _handlerMock;
+
+    private readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
+    {
+        NullValueHandling = NullValueHandling.Ignore,
+        ContractResolver = new DefaultContractResolver
+        {
+            NamingStrategy = new SnakeCaseNamingStrategy
+            {
+                OverrideSpecifiedNames = false,
+                ProcessDictionaryKeys = true,
+            }
+        }
+    };
 
     /// <summary>
     /// Constructor to set up DI
@@ -27,7 +40,7 @@ public class QueueClientTests : IClassFixture<QueueClientTestFixture>
         _queueClient = fixture.ServiceProvider.GetRequiredService<QueueClient>();
         _handlerMock = fixture.HttpMessageHandlerMock;
     }
-    
+
     [Fact]
     public async Task Status_ShouldReturnQueueStatus()
     {
@@ -37,8 +50,9 @@ public class QueueClientTests : IClassFixture<QueueClientTestFixture>
             Status = QueueStatus.COMPLETED,
         };
         var expectedJsonResponse =
-            new StringContent(JsonSerializer.Serialize(expectedResponse), Encoding.UTF8, "application/json");
-        
+            new StringContent(JsonConvert.SerializeObject(expectedResponse, _jsonSerializerSettings), Encoding.UTF8,
+                "application/json");
+
         _handlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
@@ -96,18 +110,18 @@ public class QueueClientTests : IClassFixture<QueueClientTestFixture>
                     {
                         StatusCode = HttpStatusCode.OK,
                         Content = new StringContent(
-                            JsonSerializer.Serialize(new QueueResponse("requestId", QueueStatus.IN_QUEUE)),
+                            JsonConvert.SerializeObject(new QueueResponse("requestId", QueueStatus.IN_QUEUE), _jsonSerializerSettings),
                             Encoding.UTF8, "application/json"),
                     }
                     : new HttpResponseMessage
                     {
                         StatusCode = HttpStatusCode.OK,
                         Content = new StringContent(
-                            JsonSerializer.Serialize(new QueueResponse("requestId", QueueStatus.COMPLETED)),
+                            JsonConvert.SerializeObject(new QueueResponse("requestId", QueueStatus.COMPLETED), _jsonSerializerSettings),
                             Encoding.UTF8, "application/json"),
                     };
             });
-        
+
         await _queueClient.SubscribeToStatus("endpointId", options);
 
         onCompleteCalled.Should().BeTrue();
@@ -116,17 +130,18 @@ public class QueueClientTests : IClassFixture<QueueClientTestFixture>
     [Fact]
     public async Task Result_ShouldReturnResult()
     {
-        var expectedResult = new Result<Dictionary<string, string>>
+        var expectedResult = new Result<Dictionary<string, object>>
         {
             RequestId = "requestId",
-            Data = new Dictionary<string, string>()
+            Data = new Dictionary<string, object>()
             {
-                {"url", "https://example.com/requestId/result"},
+                { "url", "https://example.com/requestId/result" },
             }
         };
         var expectedJsonResponse =
-            new StringContent(JsonSerializer.Serialize(expectedResult), Encoding.UTF8, "application/json");
-        
+            new StringContent(JsonConvert.SerializeObject(expectedResult, _jsonSerializerSettings), Encoding.UTF8,
+                "application/json");
+
         _handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -136,10 +151,11 @@ public class QueueClientTests : IClassFixture<QueueClientTestFixture>
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = expectedJsonResponse,
+                Content = new StringContent(JsonConvert.SerializeObject(expectedResult.Data, _jsonSerializerSettings), Encoding.UTF8,
+                    "application/json")
             });
-        
-        var actualResult = await _queueClient.Result<Dictionary<string, string>>("endpointId", "requestId");
+
+        var actualResult = await _queueClient.Result<Dictionary<string, object>>("endpointId", "requestId");
 
         actualResult.Should().BeEquivalentTo(expectedResult);
     }

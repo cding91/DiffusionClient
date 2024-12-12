@@ -1,3 +1,4 @@
+using System.Numerics;
 using DiffusionClient.FalAI.Entities;
 
 namespace DiffusionClient.FalAI;
@@ -15,7 +16,7 @@ public record FastSdxlOutput
     /// Seed of the generated Image.
     /// It will be the same value of the one passed in the input or the randomly generated that was used in case none was passed.
     /// </summary>
-    public required long Seed { get; init; }
+    public required BigInteger Seed { get; init; }
     
     /// <summary>
     /// Whether the generated images contain NSFW concepts.

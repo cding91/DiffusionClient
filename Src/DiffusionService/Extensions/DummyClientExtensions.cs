@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using RichardSzalay.MockHttp;
 
-namespace DiffusionService;
+namespace DiffusionService.Extensions;
 
 /// <summary>
 /// Extension methods for configuring the services to use a dummy client for testing purposes.

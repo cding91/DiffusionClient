@@ -1,6 +1,6 @@
 using DiffusionClient;
 
-namespace DiffusionService;
+namespace DiffusionService.Extensions;
 
 /// <summary>
 /// Extension methods for configuring the services to use a diffusion client.
