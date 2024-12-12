@@ -8,15 +8,15 @@ namespace DiffusionClient;
 /// </summary>
 public class Client
 {
-    private readonly QueueClient _queueClient;
+    private readonly IQueueClient _queueClient;
 
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="httpClient">DI of HTTP client</param>
-    public Client(HttpClient httpClient)
+    /// <param name="queueClient">DI of <see cref="IQueueClient"/></param>
+    public Client(IQueueClient queueClient)
     {
-        _queueClient = new QueueClient(httpClient);
+        _queueClient = queueClient;
     }
 
     /// <summary>

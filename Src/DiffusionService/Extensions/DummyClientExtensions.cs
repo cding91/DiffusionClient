@@ -122,12 +122,12 @@ public static class DummyClientExtensions
                 c.DefaultRequestHeaders.Add("Authorization", $"Key dummy_api_key");
             })
             .ConfigurePrimaryHttpMessageHandler(() => mockHandler);
-        
-        services.AddTransient<Client>(sp =>
+        services.AddTransient<IQueueClient>(sp =>
         {
             var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
             var httpClient = httpClientFactory.CreateClient("DummyClient");
-            return new Client(httpClient);
+            return new QueueClient(httpClient);
         });
+        services.AddTransient<Client>();
     }
 }

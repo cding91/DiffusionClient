@@ -8,7 +8,7 @@ namespace DiffusionClient.Queue;
 /// <summary>
 /// Queue client for handling requests regards to the job queue
 /// </summary>
-public class QueueClient
+public class QueueClient : IQueueClient
 {
     /// <summary>
     /// HTTP client for making requests

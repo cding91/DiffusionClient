@@ -1,4 +1,5 @@
 using DiffusionClient;
+using DiffusionClient.Queue;
 
 namespace DiffusionService.Extensions;
 
@@ -15,11 +16,12 @@ public static class DiffusionClientExtensions
             c.DefaultRequestHeaders.Add("Accept", "application/json");
             c.DefaultRequestHeaders.Add("Authorization", $"Key {apiKey}");
         });
-        services.AddTransient<Client>(sp =>
+        services.AddTransient<IQueueClient>(sp =>
         {
             var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
             var httpClient = httpClientFactory.CreateClient("DevClient");
-            return new Client(httpClient);
+            return new QueueClient(httpClient);
         });
+        services.AddTransient<Client>();
     }
 }
