@@ -1,7 +1,9 @@
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using OneOf;
 
 namespace DiffusionClient.Storage;
 
@@ -80,7 +82,7 @@ public class StorageClient
 
         var jsonResponse = await response.Content.ReadAsStringAsync();
         var iniUploadResponse = JsonConvert.DeserializeObject<InitialUploadResponse>(jsonResponse, _jsonSerializerSettings)
-                                ?? throw new JsonException("Failed to deserialize the initial uplaod response");
+                                ?? throw new JsonException("Failed to deserialize the initial upload response");
 
         return iniUploadResponse;
     }
@@ -93,6 +95,24 @@ public class StorageClient
     /// <returns>New input with file replaced by URLs</returns>
     public async Task<TInput> TransformInput<TInput>(TInput input)
     {
+        if (input == null)
+        {
+            return await Task.FromResult(input);
+        }
+
+        var properties = typeof(TInput).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.PropertyType == typeof(FileResource));
+        foreach (var p in properties)
+        {
+            var value = p.GetValue(input) as FileResource;
+            
+            if (value?.Value is byte[] file)
+            {
+                var url = await Upload(file);
+                p.SetValue(input, new FileResource(url));
+            }
+        }
+
         return await Task.FromResult(input);
     }
 }
